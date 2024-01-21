@@ -1,0 +1,25 @@
+{
+    "name": "polakjan/sorted-linked-list",
+    "description": "A linked list library that keeps values sorted",
+    "type": "library",
+    "license": "proprietary",
+    "minimum-stability": "beta",
+    "version": "0.1",
+    "authors": [
+        {
+            "name": "Jan Polak",
+            "email": "jan.polak@onmyway.cz"
+        }
+    ],
+    "require": {
+        "php": "^8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "PolakJan\\SortedLinkedList\\": "src/"
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.5"
+    }
+}

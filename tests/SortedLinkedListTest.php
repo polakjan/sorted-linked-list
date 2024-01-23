@@ -216,6 +216,23 @@ class SortedLinkedListTest extends TestCase
         $this->assertSame(5, $list->seek(2));
     }
 
+    public function testSeekingToNegativePositionSeeksFromTheEnd()
+    {
+        $values = [8, 3, 1, 5];
+
+        $list = new SortedLinkedList;
+        $list->setOrder('asc');
+
+        foreach ($values as $value) {
+            $list->insert($value);
+        }
+
+        $this->assertSame(8, $list->seek(-1));
+        $this->assertSame(5, $list->seek(-2));
+        $this->assertSame(1, $list->seek(-4));
+        $this->assertSame(null, $list->seek(-5));
+    }
+
     public function testSeekingToNonexistingPositionReturnsNull()
     {
         $values = [8, 3, 1, 5];
@@ -237,8 +254,6 @@ class SortedLinkedListTest extends TestCase
 
         $list = new SortedLinkedList;
 
-        $this->assertSame(null, $list->seek(0));
-
         foreach ($values as $value) {
             $list->insert($value);
         }
@@ -256,8 +271,6 @@ class SortedLinkedListTest extends TestCase
 
         $list = new SortedLinkedList;
 
-        $this->assertSame(null, $list->seek(0));
-
         foreach ($values as $value) {
             $list->insert($value);
         }
@@ -274,8 +287,6 @@ class SortedLinkedListTest extends TestCase
         $values = [8, 3, 1, 5];
 
         $list = new SortedLinkedList;
-
-        $this->assertSame(null, $list->seek(0));
 
         foreach ($values as $value) {
             $list->insert($value);
@@ -302,8 +313,6 @@ class SortedLinkedListTest extends TestCase
 
         $list = new SortedLinkedList;
 
-        $this->assertSame(null, $list->seek(0));
-
         foreach ($values as $value) {
             $list->insert($value);
         }
@@ -321,5 +330,40 @@ class SortedLinkedListTest extends TestCase
         $last_popped = $list->pop();
         $this->assertSame(1, $last_popped);
         $this->assertSame(0, $list->length());
+    }
+
+    public function testListCanBeUsedAsTraversable()
+    {
+        $values = [8, 3, 1, 5];
+
+        $list = new SortedLinkedList;
+
+        foreach ($values as $value) {
+            $list->insert($value);
+        }
+
+        $keys_from_foreach = [];
+        $values_from_foreach = [];
+
+        foreach ($list as $key => $value) {
+            $keys_from_foreach[] = $key;
+            $values_from_foreach[] = $value;
+        }
+
+        $this->assertSame([0, 1, 2, 3], $keys_from_foreach);
+        $this->assertSame([1, 3, 5, 8], $values_from_foreach);
+
+        // once more to test the functionality of rewind
+
+        $keys_from_foreach = [];
+        $values_from_foreach = [];
+
+        foreach ($list as $key => $value) {
+            $keys_from_foreach[] = $key;
+            $values_from_foreach[] = $value;
+        }
+
+        $this->assertSame([0, 1, 2, 3], $keys_from_foreach);
+        $this->assertSame([1, 3, 5, 8], $values_from_foreach);
     }
 }

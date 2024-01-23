@@ -3,15 +3,16 @@
 namespace PolakJan\SortedLinkedList;
 
 use Collator;
+use Iterator;
 use PolakJan\SortedLinkedList\ListElement;
 use PolakJan\SortedLinkedList\SortedLinkedListInterface;
 
 /**
- * volabulary:
+ * vocabulary:
  *  - element - object of class ListElement containing a value and the pointer to the next element
  *  - value - just the value (int or string) within one element
  */
-class SortedLinkedList implements SortedLinkedListInterface
+class SortedLinkedList implements SortedLinkedListInterface, Iterator
 {
     public const SORT_ASC = 'asc';
     public const SORT_DESC = 'desc';
@@ -24,7 +25,10 @@ class SortedLinkedList implements SortedLinkedListInterface
     // first element in the list
     protected null|ListElement $head = null;
 
-    // pointer to current element in the list or null if we're at the end of the list
+    // position of the current element in the list
+    protected int $position = 0;
+
+    // current element in the list or null if we're at the end of the list
     protected null|ListElement $current = null;
 
     // type of the inserted values
@@ -39,7 +43,12 @@ class SortedLinkedList implements SortedLinkedListInterface
     // collator instance
     protected ?Collator $collator = null;
 
-
+    /**
+     * sets the locale for string comparisons
+     *
+     * @param string locale as per RFC4646
+     * @return void
+     */
     public function setLocale(string $locale): void
     {
         if (!$this->isCollatorAvailable()) {
@@ -59,7 +68,15 @@ class SortedLinkedList implements SortedLinkedListInterface
         }
     }
 
-    public function setOrder(string $order)
+    /**
+     * sets the sorting order
+     *
+     * the only valid values are 'asc' or 'desc'
+     *
+     * @param string the order of sorting
+     * @return void
+     */
+    public function setOrder(string $order): void
     {
         if ($order !== static::SORT_ASC && $order !== static::SORT_DESC) {
             throw new \InvalidArgumentException('Invalid value for order. Only \'asc\' or \'desc\' are allowed');
@@ -74,6 +91,15 @@ class SortedLinkedList implements SortedLinkedListInterface
         }
     }
 
+    /**
+     * inserts a value into the list
+     *
+     * also resets the internal pointer so that the next call to current()
+     * returns the head element's value
+     *
+     * @param int|string inserted value
+     * @return int position where the value was inserted
+     */
     public function insert(int|string $value): int
     {
         $type = gettype($value);
@@ -84,7 +110,7 @@ class SortedLinkedList implements SortedLinkedListInterface
             throw new \InvalidArgumentException('Can\'t insert value of type '.$type.' with values of type '.$this->value_type.' already present.');
         }
 
-        $this->reset();
+        $this->rewind();
 
         $predecessor = $this->findInsertionPredecessor($value, $position);
 
@@ -95,30 +121,92 @@ class SortedLinkedList implements SortedLinkedListInterface
         return $position;
     }
 
-    public function reset()
-    {
-        $this->current = $this->head;
-    }
-
-    public function length()
+    /**
+     * returns the current length of the list
+     *
+     * @return int the length of the list
+     */
+    public function length(): int
     {
         return $this->length;
     }
 
+    /**
+     * returns the value of the current element if there is one
+     * or null if there is none
+     *
+     * necessary for implementing the Iterator interface
+     *
+     * @return null|int|string value of the current element or null
+     */
     public function current(): null|int|string
     {
         return $this->current ? $this->current->value() : null;
     }
 
-    public function next(): null|int|string
+    /**
+     * returns the key - position of the current element
+     *
+     * necessary for implementing the Iterator interface
+     * can return position outside of the list boundaries if next()
+     * is called too many times, disregarding the return of valid()
+     *
+     * @return int position of the current element in the list
+     */
+    public function key(): int
     {
-        if (null === $this->nextElement()) {
-            return null;
-        }
-
-        return $this->current->value();
+        return $this->position;
     }
 
+    /**
+     * moves the internal pointer to the next element
+     *
+     * necessary for implementing the Iterator interface
+     *
+     * @return void
+     */
+    public function next(): void
+    {
+        $this->nextElement();
+    }
+
+    /**
+     * resets the internal pointer, allowing to start iterating
+     * from the beginning again
+     *
+     * necessary for implementing the Iterator interface
+     *
+     * @return void
+     */
+    public function rewind(): void
+    {
+        $this->position = 0;
+
+        $this->current = $this->head;
+    }
+
+    /**
+     * determines whether the current internal pointer points to
+     * an existing element
+     *
+     * necessary for implementing the Iterator interface
+     *
+     * @return bool is/not the internal pointer pointing to an existing element
+     */
+    public function valid(): bool
+    {
+        return $this->position <= $this->length - 1;
+    }
+
+    /**
+     * seeks to a position and returns the value there
+     *
+     * if the value is not found, returns null
+     * if the position is negative, seeks from the end
+     *
+     * @param int position where the value should be found
+     * @return null|int|string returned value or null on
+     */
     public function seek(int $position): null|int|string
     {
         $element = $this->seekElement($position);
@@ -126,6 +214,14 @@ class SortedLinkedList implements SortedLinkedListInterface
         return $element ? $element->value() : null;
     }
 
+    /**
+     * removes an element from an arbitrary position in the list
+     *
+     * if the position is negative, removes from the end
+     *
+     * @param int position from which the element should be removed
+     * @return null|int|string the removed element
+     */
     public function remove(int $position): null|int|string
     {
         if ($position === 0) {
@@ -149,6 +245,11 @@ class SortedLinkedList implements SortedLinkedListInterface
         return null;
     }
 
+    /**
+     * shifts an element off the beginning of the list
+     *
+     * @return null|int|string the removed element
+     */
     public function shift(): null|int|string
     {
         if (!$this->head) {
@@ -164,6 +265,11 @@ class SortedLinkedList implements SortedLinkedListInterface
         return $old_head->value();
     }
 
+    /**
+     * pops an element off the end of the list
+     *
+     * @return null|int|string the removed element
+     */
     public function pop(): null|int|string
     {
         if ($this->length <= 1) {
@@ -173,6 +279,11 @@ class SortedLinkedList implements SortedLinkedListInterface
         return $this->remove($this->length - 1);
     }
 
+    /**
+     * converts the list to a numerically indexed array
+     *
+     * @return array the resulting array
+     */
     public function toArray(): array
     {
         $array = [];
@@ -188,13 +299,29 @@ class SortedLinkedList implements SortedLinkedListInterface
         return $array;
     }
 
+    /**
+     * returns the element to which the internal pointer is currently pointing
+     * or null on an empty list
+     *
+     * @return null|ListElement the current element or null on empty list
+     */
     protected function currentElement(): null|ListElement
     {
         return $this->current;
     }
 
+    /**
+     * moves the internal pointer to the next element if there is one
+     *
+     * always raises $this->position which is necessary for Iterator implementation
+     *
+     * @return null|ListElement the new current element or null if there is no next element
+     */
     protected function nextElement(): null|ListElement
     {
+        // always try to raise this, necessary for Iterator implementation
+        $this->position++;
+
         if (null === $this->current || null === $this->current->next()) {
             return null;
         }
@@ -204,8 +331,24 @@ class SortedLinkedList implements SortedLinkedListInterface
         return $this->current;
     }
 
+    /**
+     * tries to find an element on an arbitrary position
+     *
+     * @param int position where to look for the element. Negative values
+     *            seek from the end.
+     * @return null|ListElement the found element or null if such a position
+     *                          does not exist
+     */
     protected function seekElement(int $position): null|ListElement
     {
+        if ($position < 0) {
+            $position = $this->length + $position;
+        }
+
+        if ($position < 0 || $position > $this->length - 1) {
+            return null;
+        }
+
         $element = $this->head;
 
         $i = 0;
@@ -270,11 +413,28 @@ class SortedLinkedList implements SortedLinkedListInterface
         }
     }
 
-    protected function resort()
+    /**
+     * re-sort the values again, in place
+     *
+     * makes sense to call this only when sorting parameters (order, locale)
+     * change
+     *
+     * @return void
+     */
+    protected function resort(): void
     {
         $this->head = $this->mergeSort($this->head);
     }
 
+    /**
+     * determines whether one value should be considered bigger or equal to another
+     *
+     * uses the internal settings of order and locale if necessary
+     *
+     * @param int|string first value
+     * @param int|string second value
+     * @return bool is/not the first value considered bigger or equal than the second
+     */
     protected function biggerOrEqual(int|string $a, int|string $b): bool
     {
         if (is_string($a) && $this->isCollatorAvailable()) {
@@ -287,7 +447,14 @@ class SortedLinkedList implements SortedLinkedListInterface
             : $a <= $b;
     }
 
-    protected function isCollatorAvailable()
+    /**
+     * checks if the Collator class from the `intl` extension is available
+     *
+     * remembers so that in the future the asking is faster
+     *
+     * @return bool is/not the Collator class available
+     */
+    protected function isCollatorAvailable(): bool
     {
         if ($this->collator_available === null) {
             $this->collator_available = extension_loaded('intl') && class_exists('Collator');
@@ -296,6 +463,12 @@ class SortedLinkedList implements SortedLinkedListInterface
         return $this->collator_available;
     }
 
+    /**
+     * instatiates and returns the Collator object necessary to compare localized
+     * strings
+     *
+     * @return Collator the collator object
+     */
     protected function getCollator(): Collator
     {
         if (null === $this->collator) {
@@ -305,7 +478,13 @@ class SortedLinkedList implements SortedLinkedListInterface
         return $this->collator;
     }
 
-    protected function mergeSort(null|ListElement $left_start)
+    /**
+     * merge sort implementation for re-sorting the list
+     *
+     * @param null|ListElement first element of the list that needs sorting
+     * @return null|ListElement first element of the sorted list
+     */
+    protected function mergeSort(null|ListElement $left_start): null|ListElement
     {
         if (null === $left_start || null === $left_start->next()) {
             return $left_start;
@@ -323,7 +502,13 @@ class SortedLinkedList implements SortedLinkedListInterface
         return $this->mergeListsSorted($left, $right);
     }
 
-    protected function mergeSortFindMiddle(ListElement $from)
+    /**
+     * find middle element of a list
+     *
+     * @param ListElement first element of the list
+     * @return ListElement middle element of the list
+     */
+    protected function mergeSortFindMiddle(ListElement $from): ListElement
     {
         $slow = $from;
         $fast = $from;
@@ -336,7 +521,16 @@ class SortedLinkedList implements SortedLinkedListInterface
         return $slow;
     }
 
-    private function mergeListsSorted($left, $right)
+    /**
+     * recursively merge two lists to find their elements sorted
+     *
+     * part of the merge sort implementation
+     *
+     * @param null|ListElement first element of first list to be merged
+     * @param null|ListElement first element of second list to be merged
+     * @return null|ListElement first element of the merged list
+     */
+    protected function mergeListsSorted(null|ListElement $left, null|ListElement $right): null|ListElement
     {
         $result = null;
 

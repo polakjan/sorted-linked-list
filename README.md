@@ -28,9 +28,3 @@ $value = $list->seek(3);
 
 // 2
 ```
-
-## TODO:
-
-* resort list - might require separate list driver/container
-* implement Iterable, Traversable, ArrayAccess
-    - some of them won't be possible because we can't insert elements at arbitraty positions

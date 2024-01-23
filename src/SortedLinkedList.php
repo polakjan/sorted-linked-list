@@ -18,6 +18,9 @@ class SortedLinkedList implements SortedLinkedListInterface
 
     protected string $order = self::SORT_ASC;
 
+    // current length of the list
+    protected int $length = 0;
+
     // first element in the list
     protected null|ListElement $head = null;
 
@@ -87,12 +90,19 @@ class SortedLinkedList implements SortedLinkedListInterface
 
         $this->insertAfter($value, $predecessor);
 
+        $this->length++;
+
         return $position;
     }
 
     public function reset()
     {
         $this->current = $this->head;
+    }
+
+    public function length()
+    {
+        return $this->length;
     }
 
     public function current(): null|int|string
@@ -111,7 +121,56 @@ class SortedLinkedList implements SortedLinkedListInterface
 
     public function seek(int $position): null|int|string
     {
+        $element = $this->seekElement($position);
+
+        return $element ? $element->value() : null;
+    }
+
+    public function remove(int $position): null|int|string
+    {
+        if ($position === 0) {
+            return $this->shift();
+        }
+
+        if ($position < 0) {
+            $position = $this->length + $position + 1;
+        }
+
+        $previous_element = $this->seekElement($position - 1);
+
+        if ($previous_element && $element = $previous_element->next()) {
+            $previous_element->setNext($element->next());
+
+            $this->length--;
+
+            return $element->value();
+        }
+
         return null;
+    }
+
+    public function shift(): null|int|string
+    {
+        if (!$this->head) {
+            return null;
+        }
+
+        $old_head = $this->head;
+
+        $this->head = $this->head->next();
+
+        $this->length--;
+
+        return $old_head->value();
+    }
+
+    public function pop(): null|int|string
+    {
+        if ($this->length <= 1) {
+            return $this->shift();
+        }
+
+        return $this->remove($this->length - 1);
     }
 
     public function toArray(): array
@@ -143,6 +202,23 @@ class SortedLinkedList implements SortedLinkedListInterface
         $this->current = $this->current->next();
 
         return $this->current;
+    }
+
+    protected function seekElement(int $position): null|ListElement
+    {
+        $element = $this->head;
+
+        $i = 0;
+
+        while ($element) {
+            if ($i++ === $position) {
+                break;
+            }
+
+            $element = $element->next();
+        }
+
+        return $element;
     }
 
     protected function findInsertionPredecessor(int|string &$value, ?int &$position = 0): null|ListElement

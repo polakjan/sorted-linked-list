@@ -201,4 +201,125 @@ class SortedLinkedListTest extends TestCase
 
         $list->insert('abc');
     }
+
+    public function testSeekingToExistingPositionReturnsValue()
+    {
+        $values = [8, 3, 1, 5];
+
+        $list = new SortedLinkedList;
+        $list->setOrder('asc');
+
+        foreach ($values as $value) {
+            $list->insert($value);
+        }
+
+        $this->assertSame(5, $list->seek(2));
+    }
+
+    public function testSeekingToNonexistingPositionReturnsNull()
+    {
+        $values = [8, 3, 1, 5];
+
+        $list = new SortedLinkedList;
+
+        $this->assertSame(null, $list->seek(0));
+
+        foreach ($values as $value) {
+            $list->insert($value);
+        }
+
+        $this->assertSame(null, $list->seek(4));
+    }
+
+    public function testRemovingElementWorks()
+    {
+        $values = [8, 3, 1, 5];
+
+        $list = new SortedLinkedList;
+
+        $this->assertSame(null, $list->seek(0));
+
+        foreach ($values as $value) {
+            $list->insert($value);
+        }
+
+        $removed = $list->remove(2);
+
+        $this->assertSame([1, 3, 8], $list->toArray());
+        $this->assertSame(5, $removed);
+        $this->assertSame(3, $list->length());
+    }
+
+    public function testRemovingHeadElementWorks()
+    {
+        $values = [8, 3, 1, 5];
+
+        $list = new SortedLinkedList;
+
+        $this->assertSame(null, $list->seek(0));
+
+        foreach ($values as $value) {
+            $list->insert($value);
+        }
+
+        $removed = $list->remove(0);
+
+        $this->assertSame([3, 5, 8], $list->toArray());
+        $this->assertSame(1, $removed);
+        $this->assertSame(3, $list->length());
+    }
+
+    public function testShiftingElementsWorks()
+    {
+        $values = [8, 3, 1, 5];
+
+        $list = new SortedLinkedList;
+
+        $this->assertSame(null, $list->seek(0));
+
+        foreach ($values as $value) {
+            $list->insert($value);
+        }
+
+        $shifted = $list->shift();
+
+        $this->assertSame([3, 5, 8], $list->toArray());
+        $this->assertSame(1, $shifted);
+        $this->assertSame(3, $list->length());
+
+        $list->shift();
+
+        $list->shift();
+
+        $last_shifted = $list->shift();
+        $this->assertSame(8, $last_shifted);
+        $this->assertSame(0, $list->length());
+    }
+
+    public function testPoppingElementsWorks()
+    {
+        $values = [8, 3, 1, 5];
+
+        $list = new SortedLinkedList;
+
+        $this->assertSame(null, $list->seek(0));
+
+        foreach ($values as $value) {
+            $list->insert($value);
+        }
+
+        $popped = $list->pop();
+
+        $this->assertSame([1, 3, 5], $list->toArray());
+        $this->assertSame(8, $popped);
+        $this->assertSame(3, $list->length());
+
+        $list->pop();
+
+        $list->pop();
+
+        $last_popped = $list->pop();
+        $this->assertSame(1, $last_popped);
+        $this->assertSame(0, $list->length());
+    }
 }

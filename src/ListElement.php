@@ -20,12 +20,12 @@ class ListElement
         return $this->value;
     }
 
-    public function next()
+    public function next(): null|ListElement
     {
         return $this->next;
     }
 
-    public function setNext(null|ListElement $next)
+    public function setNext(null|ListElement $next): void
     {
         $this->next = $next;
     }

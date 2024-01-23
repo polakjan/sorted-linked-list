@@ -29,10 +29,8 @@ class SortedLinkedListTest extends TestCase
             $list->insert($value);
         }
 
-        $list_as_array = $list->toArray();
-
-        $this->assertEmpty(array_diff($values, $list_as_array));
-        $this->assertEmpty(array_diff($list_as_array, $values));
+        $this->assertEmpty(array_diff($values, $list->toArray()));
+        $this->assertEmpty(array_diff($list->toArray(), $values));
     }
 
     public function testListCorrectlySortsIntegers()
@@ -45,9 +43,39 @@ class SortedLinkedListTest extends TestCase
             $list->insert($value);
         }
 
-        $list_as_array = $list->toArray();
+        $this->assertSame([1, 3, 5, 8], $list->toArray());
+    }
 
-        $this->assertSame([1, 3, 5, 8], $list_as_array);
+    public function testListCorrectlySortsIntegersInDescendingOrder()
+    {
+        $values = [8, 3, 1, 5];
+
+        $list = new SortedLinkedList;
+        $list->setOrder('desc');
+
+        foreach ($values as $value) {
+            $list->insert($value);
+        }
+
+        $this->assertSame([8, 5, 3, 1], $list->toArray());
+    }
+
+    public function testListCorrectlyResortsIntegersAfterOrderChange()
+    {
+        $values = [8, 3, 1, 5];
+
+        $list = new SortedLinkedList;
+        $list->setOrder('asc');
+
+        foreach ($values as $value) {
+            $list->insert($value);
+        }
+
+        $this->assertSame([1, 3, 5, 8], $list->toArray());
+
+        $list->setOrder('desc');
+
+        $this->assertSame([8, 5, 3, 1], $list->toArray());
     }
 
     public function testListCorrectlySortsStrings()
@@ -60,9 +88,39 @@ class SortedLinkedListTest extends TestCase
             $list->insert($value);
         }
 
-        $list_as_array = $list->toArray();
+        $this->assertSame(['a', 'c', 'e', 'h'], $list->toArray());
+    }
 
-        $this->assertSame(['a', 'c', 'e', 'h'], $list_as_array);
+    public function testListCorrectlySortsStringsInDescendingOrder()
+    {
+        $values = ['h', 'c', 'a', 'e'];
+
+        $list = new SortedLinkedList;
+        $list->setOrder('desc');
+
+        foreach ($values as $value) {
+            $list->insert($value);
+        }
+
+        $this->assertSame(['h', 'e', 'c', 'a'], $list->toArray());
+    }
+
+    public function testListCorrectlyResortsStringsAfterOrderChange()
+    {
+        $values = ['h', 'c', 'a', 'e'];
+
+        $list = new SortedLinkedList;
+        $list->setOrder('asc');
+
+        foreach ($values as $value) {
+            $list->insert($value);
+        }
+
+        $this->assertSame(['a', 'c', 'e', 'h'], $list->toArray());
+
+        $list->setOrder('desc');
+
+        $this->assertSame(['h', 'e', 'c', 'a'], $list->toArray());
     }
 
     /**
@@ -93,10 +151,36 @@ class SortedLinkedListTest extends TestCase
                 $list->insert($value);
             }
 
-            $list_as_array = $list->toArray();
-
-            $this->assertSame($expected_ordering, $list_as_array);
+            $this->assertSame($expected_ordering, $list->toArray());
         }
+    }
+
+    public function testListCorrectlyResortsStringsAfterLocaleChange()
+    {
+        $values = [
+            'ä',
+            'z',
+            'ch',
+            'c',
+            'd'
+        ];
+
+        $list = new SortedLinkedList;
+        $list->setLocale('en_US');
+
+        foreach ($values as $value) {
+            $list->insert($value);
+        }
+
+        $this->assertSame(['ä', 'c', 'ch', 'd', 'z'], $list->toArray());
+
+        $list->setLocale('cs_CZ');
+
+        $this->assertSame(['ä', 'c', 'd', 'ch', 'z'], $list->toArray());
+
+        $list->setLocale('sv_SE');
+
+        $this->assertSame(['c', 'ch', 'd', 'z', 'ä'], $list->toArray());
     }
 
     public function testInsertingInvalidValueTypeThrowsException()

@@ -13,6 +13,11 @@ use PolakJan\SortedLinkedList\SortedLinkedListInterface;
  */
 class SortedLinkedList implements SortedLinkedListInterface
 {
+    public const SORT_ASC = 'asc';
+    public const SORT_DESC = 'desc';
+
+    protected string $order = self::SORT_ASC;
+
     // first element in the list
     protected null|ListElement $head = null;
 
@@ -39,16 +44,30 @@ class SortedLinkedList implements SortedLinkedListInterface
         }
 
         if ($this->locale !== $locale) {
-
-            if ($this->head) {
-                throw new \Exception('Unable to set locale on non-empty list.');
-            }
-
             $this->locale = $locale;
 
             // clear the collator so that it can be created again
             // with the new locale
             $this->collator = null;
+
+            if ($this->head) {
+                $this->resort();
+            }
+        }
+    }
+
+    public function setOrder(string $order)
+    {
+        if ($order !== static::SORT_ASC && $order !== static::SORT_DESC) {
+            throw new \InvalidArgumentException('Invalid value for order. Only \'asc\' or \'desc\' are allowed');
+        }
+
+        if ($this->order !== $order) {
+            $this->order = $order;
+
+            if ($this->head) {
+                $this->resort();
+            }
         }
     }
 
@@ -177,20 +196,19 @@ class SortedLinkedList implements SortedLinkedListInterface
 
     protected function resort()
     {
-        // $value = $this->head;
-
-        // do {
-
-        // }
+        $this->head = $this->mergeSort($this->head);
     }
 
     protected function biggerOrEqual(int|string $a, int|string $b): bool
     {
         if (is_string($a) && $this->isCollatorAvailable()) {
-            return $this->getCollator()->compare($a, $b) >= 0;
+            $a = $this->getCollator()->compare($a, $b);
+            $b = 0;
         }
 
-        return $a >= $b;
+        return $this->order === static::SORT_ASC
+            ? $a >= $b
+            : $a <= $b;
     }
 
     protected function isCollatorAvailable()
@@ -209,5 +227,55 @@ class SortedLinkedList implements SortedLinkedListInterface
         }
 
         return $this->collator;
+    }
+
+    protected function mergeSort(null|ListElement $left_start)
+    {
+        if (null === $left_start || null === $left_start->next()) {
+            return $left_start;
+        }
+
+        $middle = $this->mergeSortFindMiddle($left_start);
+
+        // we end this list here and start a new one on the following element
+        $right_start = $middle->next();
+        $middle->setNext(null);
+
+        $left = $this->mergeSort($left_start);
+        $right = $this->mergeSort($right_start);
+
+        return $this->mergeListsSorted($left, $right);
+    }
+
+    protected function mergeSortFindMiddle(ListElement $from)
+    {
+        $slow = $from;
+        $fast = $from;
+
+        while (null !== ($fast_next = $fast->next()) && null !== ($fast_next_next = $fast_next->next())) {
+            $slow = $slow->next();
+            $fast = $fast_next_next;
+        }
+
+        return $slow;
+    }
+
+    private function mergeListsSorted($left, $right)
+    {
+        $result = null;
+
+        if (null === $left) return $right;
+        if (null === $right) return $left;
+
+        if ($this->biggerOrEqual($right->value(), $left->value())) {
+            $result = $left;
+            $result->setNext($this->mergeListsSorted($left->next(), $right));
+
+        } else {
+            $result = $right;
+            $result->setNext($this->mergeListsSorted($left, $right->next()));
+        }
+
+        return $result;
     }
 }

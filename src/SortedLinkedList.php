@@ -505,6 +505,8 @@ class SortedLinkedList implements SortedLinkedListInterface, Iterator
     /**
      * find middle element of a list
      *
+     * part of the merge sort implementation
+     *
      * @param ListElement first element of the list
      * @return ListElement middle element of the list
      */

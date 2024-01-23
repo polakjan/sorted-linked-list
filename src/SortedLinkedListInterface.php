@@ -7,7 +7,7 @@ interface SortedLinkedListInterface
     /**
      * sets the locale for string comparisons
      *
-     * @param string locale as per RFC4646
+     * @param string the new locale
      * @return void
      */
     public function setLocale(string $locale): void;
@@ -22,9 +22,6 @@ interface SortedLinkedListInterface
 
     /**
      * inserts a value into the list
-     *
-     * also resets the pointer so that the next call to current()
-     * returns the head element's value
      *
      * @param int|string inserted value
      * @return int position where the value was inserted
